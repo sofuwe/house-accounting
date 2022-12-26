@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Import Transactions: TD 2021-Dec",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "import_transactions",
+                "--source",
+                ".input/td-2021-dec.pdf",
+                "--institution",
+                "TD_CANADA",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
+    ]
+}
