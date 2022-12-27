@@ -8,7 +8,22 @@
             "args": [
                 "import_transactions",
                 "--source",
-                ".input/td-2021-dec.pdf",
+                ".input/td/td-2021-dec.pdf",
+                "--institution",
+                "td_canada",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Import Transactions: TD All",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "import_transactions",
+                "--source",
+                ".input/td/",
                 "--institution",
                 "td_canada",
             ],
