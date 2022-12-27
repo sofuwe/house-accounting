@@ -10,7 +10,7 @@
                 "--source",
                 ".input/td-2021-dec.pdf",
                 "--institution",
-                "TD_CANADA",
+                "td_canada",
             ],
             "console": "integratedTerminal",
             "justMyCode": false
