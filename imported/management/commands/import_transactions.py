@@ -81,7 +81,7 @@ class Command(BaseCommand):
 
             source_file = source_file_or_dir
             logger.info("Import from file %s", source_file)
-            importer: "ITransactionImporter" = Importer.from_args(
+            importer = Importer.from_args(
                 source=source_file,
                 institution=institution,
             )
