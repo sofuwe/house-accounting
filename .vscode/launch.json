@@ -1,14 +1,23 @@
 {
     "configurations": [
         {
-            "name": "Import Transactions: TD 2021-Dec",
+            "name": "Run server",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "runserver"
+            ],
+        },
+        {
+            "name": "Import Transactions: TD-PDF 2021-Dec",
             "type": "python",
             "request": "launch",
             "program": "./manage.py",
             "args": [
                 "import_transactions",
                 "--source",
-                ".input/td/td-2021-dec.pdf",
+                ".input/td-pdf/td-2021-dec.pdf",
                 "--institution",
                 "td_canada",
             ],
@@ -16,14 +25,29 @@
             "justMyCode": false
         },
         {
-            "name": "Import Transactions: TD All",
+            "name": "Import Transactions: TD-PDF All",
             "type": "python",
             "request": "launch",
             "program": "./manage.py",
             "args": [
                 "import_transactions",
                 "--source",
-                ".input/td/",
+                ".input/td-pdf/",
+                "--institution",
+                "td_canada",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Import Transactions: TD-CSV All",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "import_transactions",
+                "--source",
+                ".input/td-csv/",
                 "--institution",
                 "td_canada",
             ],
