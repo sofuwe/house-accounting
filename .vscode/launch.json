@@ -53,6 +53,21 @@
             ],
             "console": "integratedTerminal",
             "justMyCode": false
-        }
+        },
+        {
+            "name": "Import Transactions: KOHO-CSV All",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "import_transactions",
+                "--source",
+                ".input/koho-csv/",
+                "--institution",
+                "koho",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
     ]
 }

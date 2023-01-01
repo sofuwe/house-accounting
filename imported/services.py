@@ -47,6 +47,12 @@ class Importer:
                     source=self.source,
                     institution=self.institution,
                 )
+        elif self.institution == TransactionInstitutionSource.koho:
+            if self.source.endswith(".csv"):
+                return TransactionImporterKOHOCSV(
+                    source=self.source,
+                    institution=self.institution,
+                )
         raise Exception(
             f"'source:institution' combination '{self.source}:{self.institution.value}'"
             " not supported."
@@ -301,4 +307,141 @@ class TransactionImporterTDCanadaCSV:
                 ],
             )
             for row in csv_reader:
+                yield row
+
+
+class TransactionImporterKOHOCSV:
+    ZERO_STR = "0.00"  # KOHO uses this value to indicate null amount in/out
+
+    source: str
+    institution: "TransactionInstitutionSource"
+
+    transactions_counter = Counter()
+
+    class RowRaw(TypedDict):
+        date_time: str
+        transaction_id_raw: str
+        amount_in: str
+        amount_out: str
+        current_balance: str
+        notes: str
+
+
+    class TransactionRowParser:
+        parent: "TransactionImporterKOHOCSV"
+        row_raw: "TransactionImporterKOHOCSV.RowRaw"
+        row_number: int
+
+        def __init__(
+            self,
+            parent: "TransactionImporterKOHOCSV",
+            row_raw: "TransactionImporterKOHOCSV.RowRaw",
+            row_number: int,
+        ) -> None:
+            self.parent = parent
+            self.row_number = row_number
+            self.row_raw = row_raw
+
+        def parse(self) -> tuple[str, str, date, Decimal]:
+            # Parse date
+            date_time_raw, _ = self.row_raw["date_time"].split(" ", maxsplit=1)
+            date = datetime.strptime(date_time_raw, "%Y-%m-%d").date()
+            # Parse transaction_id
+            transaction_id_raw: str = self.row_raw["transaction_id_raw"]
+            trx_count: str = self.parent.transactions_counter.get(
+                transaction_id_raw,
+                0,
+            )
+            transaction_id: str = f"{transaction_id_raw}:{date}:{trx_count}"
+            self.parent.transactions_counter[transaction_id_raw] += 1
+            # Parse amount
+            null = self.parent.ZERO_STR
+            amount_in: str = self.row_raw["amount_in"] or null
+            amount_out: str = self.row_raw["amount_out"] or null
+            if amount_in == null and amount_out == null:
+                logger.debug(
+                    "Row %s is just a status update transaction for '%s' [Note: %s]",
+                    self.row_number, 
+                    self.row_raw["transaction_id_raw"], 
+                    self.row_raw["notes"],
+                )
+            if amount_in != null and amount_out != null:
+                raise ValidationError(
+                    f"amount_in or amount_out is mutually exclusive [line:{self.row_number}]"
+                )
+            sign = -1 if amount_out != null else 1
+            amount = sign * Decimal(amount_in if amount_in != null else amount_out)
+            # Return parsed values
+            return transaction_id_raw, transaction_id, date, amount
+
+    def __init__(self, source: str, institution: "TransactionInstitutionSource") -> None:
+        self.source = source
+        self.institution = institution
+
+    def process(self) -> None:
+        field_values: dict = {}
+        transactions: list[Transaction] = []
+        for i, row in enumerate(self.iter_file()):
+            if i == 0:
+                # Skip header row
+                continue
+            row_parser = self.TransactionRowParser(
+                parent=self, 
+                row_raw=row, 
+                row_number=i,
+            )
+            trx_id_raw, trx_id, date, amount = row_parser.parse()
+            field_values = dict(
+                    date=date,
+                    transaction_id_raw=trx_id_raw,
+                    transaction_id=trx_id,
+                    amount=amount,
+                )
+            trx = Transaction(**field_values)
+            transactions.append(trx)
+
+        if not transactions:
+            logger.info("Input file has no transactions - Nothing to do.")
+            return
+        
+        # Determine transactions to-add vs to-update
+        existing_transaction_map = dict(
+            Transaction.objects
+            .filter(transaction_id__in=[t.transaction_id for t in transactions])
+            .values_list("transaction_id", "id")
+        )
+        transaction_ids_existing = set(existing_transaction_map.keys())
+        transactions_new = []
+        transactions_to_update = []
+        for transaction in transactions:
+            if transaction.transaction_id not in transaction_ids_existing:
+                transactions_new.append(transaction)
+            else:
+                trx_pkey: int = existing_transaction_map[transaction.transaction_id]
+                transaction.pk = trx_pkey
+                transactions_to_update.append(transaction)
+
+        # Add new transactions and update existing transactions
+        Transaction.objects.bulk_create(transactions_new)
+        Transaction.objects.bulk_update(
+            transactions_to_update, 
+            fields=tuple(field_values.keys()),
+        )
+        logger.info("Bulk-created %s new transactions", len(transactions_new))
+        logger.info("Bulk-updated %s existing transactions", len(transactions_to_update))
+
+    def iter_file(self) -> Iterator["RowRaw"]:
+        with open(self.source, "r") as csv_file:
+            csv_reader = csv.DictReader(
+                csv_file,
+                fieldnames=[
+                    "date_time", 
+                    "transaction_id_raw", 
+                    "amount_in",
+                    "amount_out",
+                    "current_balance",
+                    "notes",
+                ],
+            )
+            for i, row in enumerate(csv_reader):
                 yield row
