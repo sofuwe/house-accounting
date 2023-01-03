@@ -1,0 +1,36 @@
+{% extends 'base.html'%}
+
+{%block scripts%}
+<script>
+// jquery function
+$(document).ready(function(){
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [{%for x in current_balances%}{{x.0}},{%endfor%}],
+            datasets: [{
+                label: "Current balance",
+                data: [{%for x in current_balances%}{{x.1}},{%endfor%}],
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                },
+                xAxis: {
+                    type: "time"
+                }
+            }
+        }
+    });
+});
+</script>
+{%endblock scripts%}
+
+{%block content%}
+<!-- displaying the chart -->
+<!-- you can also play around with the width and height to increase or decrease the chart size -->
+<canvas id="myChart" width="400" height="100"></canvas>  
+{%endblock content%}

@@ -8,6 +8,7 @@
             "args": [
                 "runserver"
             ],
+            "justMyCode": false
         },
         {
             "name": "Import Transactions: TD-PDF 2021-Dec",
