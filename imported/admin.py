@@ -6,6 +6,7 @@ from .models import Transaction
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     fields = (
+        "account",
         "transaction_id",
         "transaction_id_raw",
         "date",
@@ -16,4 +17,6 @@ class TransactionAdmin(admin.ModelAdmin):
         "date",
         "amount",
     )
+    list_filter = ("date", "account__name")
+    search_fields = ("date", "account__name")
     ordering = ("-date",)

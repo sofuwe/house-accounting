@@ -1,10 +1,7 @@
 from enum import StrEnum
 from typing import Protocol
 
-
-class TransactionInstitutionSource(StrEnum):
-    td_canada = "TD_CANADA"
-    koho = "KOHO"
+from entities.interfaces import TransactionInstitutionSource
 
 
 class ITransactionImporter(Protocol):

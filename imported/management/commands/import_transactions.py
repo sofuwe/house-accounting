@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 
 from typing import TYPE_CHECKING
 
+from entities.models import Account
 from ...services import Importer
 from ...interfaces import TransactionInstitutionSource
 
@@ -36,32 +37,43 @@ class Command(BaseCommand):
             required=True,
         )
         parser.add_argument(
-            "--institution",
-            help="Institution the transaction file is from",
+            "--account",
+            help="Account the transaction file was extracted from",
             type=str,
             required=True,
-            choices=[x.name for x in TransactionInstitutionSource],
         )
 
     def handle(self, *args: "Any", **options: "Any") -> "Optional[str]":
         source: str = options["source"]
+        account_name: str = options["account"]
+        account: "Account" = Account.objects.get(name=account_name)
         institution: TransactionInstitutionSource = TransactionInstitutionSource[
-            options["institution"]
+            account.institution
         ]
         if os.path.isfile(source):
-            self._import_from_file(source=source, institution=institution)
+            self._import_from_file(
+                source=source,
+                institution=institution,
+                account=account,
+            )
         else:
-            self._import_from_directory(source_dir=source, institution=institution)
+            self._import_from_directory(
+                source_dir=source, 
+                institution=institution,
+                account=account,
+            )
 
     def _import_from_file(
         self, 
         source: str, 
         institution: TransactionInstitutionSource,
+        account: "Account",
     ) -> None:
         logger.info("Import from file %s", source)
         importer: "ITransactionImporter" = Importer.from_args(
             source=source,
             institution=institution,
+            account=account,
         )
         importer.process()
 
@@ -69,7 +81,9 @@ class Command(BaseCommand):
         self,
         source_dir: str,
         institution: TransactionInstitutionSource,
+        account: "Account",
     ) -> None:
+        logger.info("Import from directory %s", source_dir)
         for source_file_or_dir in os.listdir(source_dir):
             source_file_or_dir: str = os.path.join(
                 source_dir,
@@ -80,9 +94,8 @@ class Command(BaseCommand):
                 continue
 
             source_file = source_file_or_dir
-            logger.info("Import from file %s", source_file)
-            importer = Importer.from_args(
+            importer = self._import_from_file(
                 source=source_file,
                 institution=institution,
+                account=account,
             )
-            importer.process()

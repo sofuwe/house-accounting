@@ -11,6 +11,7 @@ from django.forms import ValidationError
 
 import pypdfium2 as pdfium
 
+from entities.models import Account
 from .interfaces import TransactionInstitutionSource
 from .models import Transaction
 
@@ -22,13 +23,30 @@ logger = logging.getLogger(__name__)
 
 class Importer:
 
-    def __init__(self, source: str, institution: "TransactionInstitutionSource") -> None:
+    source: str
+    institution: "TransactionInstitutionSource"
+    account: "Account"
+    transactions_counter: "Counter"
+
+    def __init__(
+        self,
+        source: str,
+        institution: "TransactionInstitutionSource",
+        account: "Account",
+    ) -> None:
         self.source = source
         self.institution = institution
+        self.account = account
+        self.transactions_counter = Counter()
 
     @classmethod
-    def from_args(cls, source: str, institution: "TransactionInstitutionSource") -> "Importer":
-        instance = cls(source=source, institution=institution)
+    def from_args(
+        cls,
+        source: str,
+        institution: "TransactionInstitutionSource",
+        account: "Account",
+    ) -> "Importer":
+        instance = cls(source=source, institution=institution, account=account)
         return instance
 
     def process(self) -> None:
@@ -36,36 +54,26 @@ class Importer:
         implementor.process()
 
     def _get_implentor(self) -> "ITransactionImporter":
+        kwargs = dict(
+            source=self.source, 
+            institution=self.institution,
+            account=self.account,
+        )
         if self.institution == TransactionInstitutionSource.td_canada.value:
             if self.source.endswith(".pdf"):
-                return TransactionImporterTDCanadaPDF(
-                    source=self.source, 
-                    institution=self.institution,
-                )
+                return TransactionImporterTDCanadaPDF(**kwargs)
             elif self.source.endswith(".csv"):
-                return TransactionImporterTDCanadaCSV(
-                    source=self.source,
-                    institution=self.institution,
-                )
+                return TransactionImporterTDCanadaCSV(**kwargs)
         elif self.institution == TransactionInstitutionSource.koho:
             if self.source.endswith(".csv"):
-                return TransactionImporterKOHOCSV(
-                    source=self.source,
-                    institution=self.institution,
-                )
+                return TransactionImporterKOHOCSV(**kwargs)
         raise Exception(
             f"'source:institution' combination '{self.source}:{self.institution.value}'"
             " not supported."
         )
 
 
-
 class TransactionImporterTDCanadaPDF(Importer):
-
-    source: str
-    institution: "TransactionInstitutionSource"
-
-    transactions_counter = Counter()
 
     class TransactionRowParser:
         pattern = r"^.*\s[,0-9]+\.[0-9]{2}\s[A-Z]{3}[0-9]{2}(\r|\s[,0-9]+\.[0-9]{2}\r)$"
@@ -132,10 +140,6 @@ class TransactionImporterTDCanadaPDF(Importer):
         def is_match(cls, line_raw: str) -> bool:
             return re.match(cls.pattern, line_raw) is not None
 
-    def __init__(self, source: str, institution: "TransactionInstitutionSource") -> None:
-        self.source = source
-        self.institution = institution
-
     def process(self) -> None:
         transactions: list["Transaction"] = []
         texts: list[str] = []
@@ -146,6 +150,7 @@ class TransactionImporterTDCanadaPDF(Importer):
                 trx_parser = self.TransactionRowParser.from_line_raw(line_raw=line)
                 trx_date, transaction_id_raw, transaction_id, amount = trx_parser.parse(year=year)
                 field_values = dict(
+                    account_id=self.account.pk,
                     date=trx_date,
                     transaction_id_raw=transaction_id_raw,
                     transaction_id=transaction_id,
@@ -187,12 +192,7 @@ class TransactionImporterTDCanadaPDF(Importer):
             yield from lines
 
 
-class TransactionImporterTDCanadaCSV:
-
-    source: str
-    institution: "TransactionInstitutionSource"
-
-    transactions_counter = Counter()
+class TransactionImporterTDCanadaCSV(Importer):
 
     class RowRaw(TypedDict):
         date: str
@@ -244,11 +244,6 @@ class TransactionImporterTDCanadaCSV:
             # Return parsed values
             return transaction_id_raw, transaction_id, date, amount
 
-    def __init__(self, source: str, institution: "TransactionInstitutionSource") -> None:
-        self.source = source
-        self.institution = institution
-        self.transactions_counter = Counter()
-
     def process(self) -> None:
         field_values: dict = {}
         transactions: list[Transaction] = []
@@ -260,6 +255,7 @@ class TransactionImporterTDCanadaCSV:
             )
             trx_id_raw, trx_id, date, amount = row_parser.parse()
             field_values = dict(
+                    account_id=self.account.pk,
                     date=date,
                     transaction_id_raw=trx_id_raw,
                     transaction_id=trx_id,
@@ -310,13 +306,8 @@ class TransactionImporterTDCanadaCSV:
                 yield row
 
 
-class TransactionImporterKOHOCSV:
+class TransactionImporterKOHOCSV(Importer):
     ZERO_STR = "0.00"  # KOHO uses this value to indicate null amount in/out
-
-    source: str
-    institution: "TransactionInstitutionSource"
-
-    transactions_counter = Counter()
 
     class RowRaw(TypedDict):
         date_time: str
@@ -325,7 +316,6 @@ class TransactionImporterKOHOCSV:
         amount_out: str
         current_balance: str
         notes: str
-
 
     class TransactionRowParser:
         parent: "TransactionImporterKOHOCSV"
@@ -374,10 +364,6 @@ class TransactionImporterKOHOCSV:
             # Return parsed values
             return transaction_id_raw, transaction_id, date, amount
 
-    def __init__(self, source: str, institution: "TransactionInstitutionSource") -> None:
-        self.source = source
-        self.institution = institution
-
     def process(self) -> None:
         field_values: dict = {}
         transactions: list[Transaction] = []
@@ -392,6 +378,7 @@ class TransactionImporterKOHOCSV:
             )
             trx_id_raw, trx_id, date, amount = row_parser.parse()
             field_values = dict(
+                    account_id=self.account.pk,
                     date=date,
                     transaction_id_raw=trx_id_raw,
                     transaction_id=trx_id,
