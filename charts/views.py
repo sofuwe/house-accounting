@@ -8,6 +8,7 @@ from django.db.models import Max, Min, Sum
 from django.shortcuts import render
 from django.views.generic import TemplateView
 
+from entities.models import Account
 from imported.models import Transaction
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -47,15 +48,18 @@ class CurrentBalancesChartView(TemplateView):
             tx_by_date[cur_date].append((trx_id_raw, cur_amount))
         # DEBUG END
 
-        starting_balance: Decimal = (
-            Transaction.objects
-            .filter(date__lt=date_start)
-            .aggregate(Sum("amount"))
-        )["amount__sum"] or Decimal()
+        # starting_balance_trx: Decimal = (
+        #     Transaction.objects
+        #     .filter(date__lt=date_start)
+        #     .aggregate(Sum("amount"))
+        # )["amount__sum"] or Decimal()
+        starting_balance_accounts: Decimal = (
+            Account.objects.aggregate(Sum("initial_balance"))
+        )["initial_balance__sum"] or Decimal()
 
-        current_balances_map: dict[date, Decimal] = defaultdict(Decimal)
+        current_value_map: dict[date, Decimal] = defaultdict(Decimal)
         for cur_date, cur_amount in qs:
-            current_balances_map[cur_date] += cur_amount
+            current_value_map[cur_date] += cur_amount
         
         days_sorted = [
             date_start + timedelta(days=i)
@@ -64,13 +68,13 @@ class CurrentBalancesChartView(TemplateView):
 
         for i, day in enumerate(days_sorted):
             if i == 0:
-                current_balances_map[day] += starting_balance
+                current_value_map[day] += starting_balance_accounts
             else:
                 day_before = days_sorted[i - 1]
-                current_balances_map[day] += current_balances_map[day_before]
+                current_value_map[day] += current_value_map[day_before]
 
         current_balances = [
-            (i, current_balances_map[cur_date]) 
+            (i, current_value_map[cur_date]) 
             for i, cur_date in enumerate(days_sorted)
         ]
 

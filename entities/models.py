@@ -1,6 +1,12 @@
+from typing import TYPE_CHECKING
+
 from django.db import models
 
 from .interfaces import TransactionInstitutionSource
+
+if TYPE_CHECKING:
+    from datetime import date
+    from decimal import Decimal
 
 
 class Account(models.Model):
@@ -13,6 +19,13 @@ class Account(models.Model):
     institution: str = models.CharField(
         choices=TransactionInstitutionSource.choices(),
         max_length=50,
+    )
+    inception_date: "date" = models.DateField(null=False)
+    initial_balance: "Decimal" = models.DecimalField(
+        null=False,
+        default=0,
+        max_digits=15,
+        decimal_places=4,
     )
 
     def __str__(self) -> str:
