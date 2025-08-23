@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class Importer:
-
     def __init__(self, source: str, institution: "TransactionInstitutionSource") -> None:
         self.source = source
         self.institution = institution
@@ -39,7 +38,7 @@ class Importer:
         if self.institution == TransactionInstitutionSource.td_canada.value:
             if self.source.endswith(".pdf"):
                 return TransactionImporterTDCanadaPDF(
-                    source=self.source, 
+                    source=self.source,
                     institution=self.institution,
                 )
             elif self.source.endswith(".csv"):
@@ -54,14 +53,11 @@ class Importer:
                     institution=self.institution,
                 )
         raise Exception(
-            f"'source:institution' combination '{self.source}:{self.institution.value}'"
-            " not supported."
+            f"'source:institution' combination '{self.source}:{self.institution.value}' not supported."
         )
 
 
-
 class TransactionImporterTDCanadaPDF(Importer):
-
     source: str
     institution: "TransactionInstitutionSource"
 
@@ -159,9 +155,9 @@ class TransactionImporterTDCanadaPDF(Importer):
 
         # Determine transactions to-add vs to-update
         existing_transaction_map = dict(
-            Transaction.objects
-            .filter(transaction_id__in=[t.transaction_id for t in transactions])
-            .values_list("transaction_id", "id")
+            Transaction.objects.filter(
+                transaction_id__in=[t.transaction_id for t in transactions]
+            ).values_list("transaction_id", "id")
         )
         transaction_ids_existing = set(existing_transaction_map.keys())
         transactions_new = []
@@ -188,7 +184,6 @@ class TransactionImporterTDCanadaPDF(Importer):
 
 
 class TransactionImporterTDCanadaCSV:
-
     source: str
     institution: "TransactionInstitutionSource"
 
@@ -254,25 +249,25 @@ class TransactionImporterTDCanadaCSV:
         transactions: list[Transaction] = []
         for i, row in enumerate(self.iter_file()):
             row_parser = self.TransactionRowParser(
-                parent=self, 
-                row_raw=row, 
+                parent=self,
+                row_raw=row,
                 row_number=i,
             )
             trx_id_raw, trx_id, date, amount = row_parser.parse()
             field_values = dict(
-                    date=date,
-                    transaction_id_raw=trx_id_raw,
-                    transaction_id=trx_id,
-                    amount=amount,
-                )
+                date=date,
+                transaction_id_raw=trx_id_raw,
+                transaction_id=trx_id,
+                amount=amount,
+            )
             trx = Transaction(**field_values)
             transactions.append(trx)
-        
+
         # Determine transactions to-add vs to-update
         existing_transaction_map = dict(
-            Transaction.objects
-            .filter(transaction_id__in=[t.transaction_id for t in transactions])
-            .values_list("transaction_id", "id")
+            Transaction.objects.filter(
+                transaction_id__in=[t.transaction_id for t in transactions]
+            ).values_list("transaction_id", "id")
         )
         transaction_ids_existing = set(existing_transaction_map.keys())
         transactions_new = []
@@ -288,7 +283,7 @@ class TransactionImporterTDCanadaCSV:
         # Add new transactions and update existing transactions
         Transaction.objects.bulk_create(transactions_new)
         Transaction.objects.bulk_update(
-            transactions_to_update, 
+            transactions_to_update,
             fields=tuple(field_values.keys()),
         )
         logger.info("Bulk-created %s new transactions", len(transactions_new))
@@ -297,10 +292,10 @@ class TransactionImporterTDCanadaCSV:
     def iter_file(self) -> Iterator["RowRaw"]:
         with open(self.source, "r") as csv_file:
             csv_reader = csv.DictReader(
-                csv_file, 
+                csv_file,
                 fieldnames=[
-                    "date", 
-                    "transaction_id_raw", 
+                    "date",
+                    "transaction_id_raw",
                     "amount_out",
                     "amount_in",
                     "current_balance",
@@ -325,7 +320,6 @@ class TransactionImporterKOHOCSV:
         amount_out: str
         current_balance: str
         notes: str
-
 
     class TransactionRowParser:
         parent: "TransactionImporterKOHOCSV"
@@ -361,8 +355,8 @@ class TransactionImporterKOHOCSV:
             if amount_in == null and amount_out == null:
                 logger.debug(
                     "Row %s is just a status update transaction for '%s' [Note: %s]",
-                    self.row_number, 
-                    self.row_raw["transaction_id_raw"], 
+                    self.row_number,
+                    self.row_raw["transaction_id_raw"],
                     self.row_raw["notes"],
                 )
             if amount_in != null and amount_out != null:
@@ -386,29 +380,29 @@ class TransactionImporterKOHOCSV:
                 # Skip header row
                 continue
             row_parser = self.TransactionRowParser(
-                parent=self, 
-                row_raw=row, 
+                parent=self,
+                row_raw=row,
                 row_number=i,
             )
             trx_id_raw, trx_id, date, amount = row_parser.parse()
             field_values = dict(
-                    date=date,
-                    transaction_id_raw=trx_id_raw,
-                    transaction_id=trx_id,
-                    amount=amount,
-                )
+                date=date,
+                transaction_id_raw=trx_id_raw,
+                transaction_id=trx_id,
+                amount=amount,
+            )
             trx = Transaction(**field_values)
             transactions.append(trx)
 
         if not transactions:
             logger.info("Input file has no transactions - Nothing to do.")
             return
-        
+
         # Determine transactions to-add vs to-update
         existing_transaction_map = dict(
-            Transaction.objects
-            .filter(transaction_id__in=[t.transaction_id for t in transactions])
-            .values_list("transaction_id", "id")
+            Transaction.objects.filter(
+                transaction_id__in=[t.transaction_id for t in transactions]
+            ).values_list("transaction_id", "id")
         )
         transaction_ids_existing = set(existing_transaction_map.keys())
         transactions_new = []
@@ -424,7 +418,7 @@ class TransactionImporterKOHOCSV:
         # Add new transactions and update existing transactions
         Transaction.objects.bulk_create(transactions_new)
         Transaction.objects.bulk_update(
-            transactions_to_update, 
+            transactions_to_update,
             fields=tuple(field_values.keys()),
         )
         logger.info("Bulk-created %s new transactions", len(transactions_new))
@@ -435,8 +429,8 @@ class TransactionImporterKOHOCSV:
             csv_reader = csv.DictReader(
                 csv_file,
                 fieldnames=[
-                    "date_time", 
-                    "transaction_id_raw", 
+                    "date_time",
+                    "transaction_id_raw",
                     "amount_in",
                     "amount_out",
                     "current_balance",

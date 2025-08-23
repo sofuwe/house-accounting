@@ -11,5 +11,4 @@ class ITransactionImporter(Protocol):
     source: str
     institution: TransactionInstitutionSource
 
-    def process(self) -> None:
-        ...
+    def process(self) -> None: ...

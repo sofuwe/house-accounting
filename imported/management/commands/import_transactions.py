@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     """
     Import transactions from a file of transactions.
-    
+
     Supported file formats:
     * PDF
 
@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: "CommandParser") -> None:
         parser.add_argument(
-            "--source", 
+            "--source",
             help="Path to transaction file to source from",
             required=True,
         )
@@ -45,17 +45,15 @@ class Command(BaseCommand):
 
     def handle(self, *args: "Any", **options: "Any") -> "Optional[str]":
         source: str = options["source"]
-        institution: TransactionInstitutionSource = TransactionInstitutionSource[
-            options["institution"]
-        ]
+        institution: TransactionInstitutionSource = TransactionInstitutionSource[options["institution"]]
         if os.path.isfile(source):
             self._import_from_file(source=source, institution=institution)
         else:
             self._import_from_directory(source_dir=source, institution=institution)
 
     def _import_from_file(
-        self, 
-        source: str, 
+        self,
+        source: str,
         institution: TransactionInstitutionSource,
     ) -> None:
         logger.info("Import from file %s", source)

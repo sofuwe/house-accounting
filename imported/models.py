@@ -7,7 +7,6 @@ from django.db import models
 
 
 class Transaction(models.Model):
-
     transaction_id_raw: str = models.CharField(blank=False, max_length=32)
     transaction_id: str = models.CharField(blank=False, max_length=32, unique=True)
     amount: Decimal = models.DecimalField(
