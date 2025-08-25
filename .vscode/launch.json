@@ -11,6 +11,32 @@
             "justMyCode": false
         },
         {
+            "name": "Import Data fr .input-dir/",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "import_data",
+                "--source-dir",
+                ".input-dir/"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Import Data fr .input-dir-2/",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "import_data",
+                "--source-dir",
+                ".input-dir-2/"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Import Transactions: TD-PDF 2021-Dec",
             "type": "python",
             "request": "launch",
@@ -70,5 +96,20 @@
             "console": "integratedTerminal",
             "justMyCode": false
         },
+        {
+            "name": "Parse Transactions: .transactions-raw to .input-dir-2",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "parse_data",
+                "--source-dir",
+                ".transactions-raw/",
+                "--dest-dir",
+                ".input-dir-2/"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        }
     ]
 }

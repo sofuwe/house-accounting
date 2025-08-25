@@ -1,14 +1,13 @@
-from collections import defaultdict
-from calendar import mdays
-from datetime import date, datetime, timedelta
-from decimal import Decimal
+import calendar
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from django.db.models import Max, Min, Sum
-from django.shortcuts import render
 from django.views.generic import TemplateView
 
-from imported.models import Transaction
+from charts.services import ChartService
+from config.services import ConfigReadService
+from householdentities.services import EntityService
+from transactions.services import TransactionReadService
 
 if TYPE_CHECKING:  # pragma: no cover
     from django.http import HttpRequest, HttpResponse
@@ -26,42 +25,30 @@ class CurrentBalancesChartView(TemplateView):
         context = super().get_context_data(**kwargs)
         if kwargs.get("year_month"):
             date_start = datetime.strptime(kwargs["year_month"], "%Y-%m").date()
-            date_end = date_start + timedelta(days=mdays[date_start.month])
+            _, month_days = calendar.monthrange(date_start.year, date_start.month)
+            date_end = date_start + timedelta(days=month_days)
         else:
-            dates_min_max: dict[str, date] = Transaction.objects.aggregate(Min("date"), Max("date"))
-            date_start = dates_min_max["date__min"]
-            date_end = dates_min_max["date__max"]
+            entity_service = EntityService()
+            config_service = ConfigReadService()
+            config_latest = config_service.get_latest_config()
+            assert config_latest is not None, "No config found, please create one first."
+            date_start = config_latest.date_fr
+            date_end = config_latest.date_to
+            assert date_start is not None and date_end is not None, "Config dates cannot be None."
 
-        qs = (
-            Transaction.objects.filter(date__gte=date_start)
-            .filter(date__lt=date_end)
-            .values_list("date", "amount")
+        trx_service = TransactionReadService()
+        entity_service = EntityService()
+        chart_service = ChartService(
+            transaction_service=trx_service,
+            entity_service=entity_service,
+        )
+        current_balances = chart_service.get_value_over_dates(
+            accounts=entity_service.get_all_account_ids(),
+            date_fr=date_start,
+            date_to=date_end,
         )
 
-        # DEBUG START
-        tx_by_date = defaultdict(list)
-        for cur_date, cur_amount, trx_id_raw in qs.values_list("date", "amount", "transaction_id_raw"):
-            tx_by_date[cur_date].append((trx_id_raw, cur_amount))
-        # DEBUG END
-
-        starting_balance: Decimal = (
-            Transaction.objects.filter(date__lt=date_start).aggregate(Sum("amount"))
-        )["amount__sum"] or Decimal()
-
-        current_balances_map: dict[date, Decimal] = defaultdict(Decimal)
-        for cur_date, cur_amount in qs:
-            current_balances_map[cur_date] += cur_amount
-
         days_sorted = [date_start + timedelta(days=i) for i in range((date_end - date_start).days + 1)]
+        context["current_balances"] = [(str(days_sorted[i]), balance) for i, balance in current_balances]
 
-        for i, day in enumerate(days_sorted):
-            if i == 0:
-                current_balances_map[day] += starting_balance
-            else:
-                day_before = days_sorted[i - 1]
-                current_balances_map[day] += current_balances_map[day_before]
-
-        current_balances = [(i, current_balances_map[cur_date]) for i, cur_date in enumerate(days_sorted)]
-
-        context["current_balances"] = current_balances
         return context
