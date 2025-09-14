@@ -38,7 +38,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "imported",
+    "config",
+    "householdentities",
+    "transactions",
+    "importing",
     "charts",
 ]
 
@@ -147,7 +150,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": "INFO",
+            # "level": "INFO",
             "filters": ["require_debug_true"],
             "class": "logging.StreamHandler",
         },
@@ -174,6 +177,13 @@ LOGGING = {
         },
         "imported": {
             "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        # TODO @imranariffin: Fix log not showing (0015)
+        "importing": {
+            "handlers": ["console"],
+            "formatter": "django.server",
             "level": "DEBUG",
             "propagate": True,
         },

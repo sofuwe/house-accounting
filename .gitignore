@@ -1,5 +1,6 @@
 # House-Accounting
-.input/
+.input-dir*/
+.transactions-raw*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

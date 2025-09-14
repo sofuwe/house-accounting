@@ -8,7 +8,7 @@ $(document).ready(function(){
     var myChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: [{%for x in current_balances%}{{x.0}},{%endfor%}],
+            labels: [{%for x in current_balances%}'{{x.0}}', {%endfor%}],
             datasets: [{
                 label: "Current balance",
                 data: [{%for x in current_balances%}{{x.1}},{%endfor%}],
