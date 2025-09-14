@@ -1,6 +1,6 @@
 # ARCHITECTURE
 
-![Architecture - High Level Data Flow Diagram](docs/images/house_accounting-Architecture-2025-08-18-2052-black.png)
+![Architecture - High Level Data Flow Diagram](images/house_accounting-Architecture-2025-08-18-2052-black.png)
 
 ```
 # TODO @imranariffin: Update architecture diagram above
