@@ -78,8 +78,9 @@ class FileParserCSVBase(Generic[T, V]):
                 try:
                     row_parsed = self.parse_row(self.RowIn.model_validate(row), file_path, i)
                     yield row_parsed
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error("Error parsing row %s in file %s [error: %s, row: %s]", i, file_path, e, row)
+                    raise e
 
 
 class AccountCSVFileRowStandard(BaseModel):
@@ -135,7 +136,13 @@ class TransactionCSVFileParserTDCanada(
     def parse_row(
         self, row_in: TransactionCSVRowInTDCanada, file_path: Path, row_num: int
     ) -> TransactionCSVRowStandard:
-        trx_date = dt.datetime.strptime(row_in.Date, "%m/%d/%Y").date()
+        try:
+            # New format: YYYY-MM-DD
+            trx_date = dt.datetime.strptime(row_in.Date, "%Y-%m-%d").date()
+        except ValueError:
+            # Old format: MM/DD/YYYY
+            trx_date = dt.datetime.strptime(row_in.Date, "%m/%d/%Y").date()
+
         trx_id_ = row_in.TransactionID.strip().replace(" ", "")
         trx_id_hash = hashlib.md5(f"{trx_id_}-{row_in.Date}-{row_num}".encode()).hexdigest()[:10]
         trx_id = f"{trx_id_}-{trx_id_hash}"
