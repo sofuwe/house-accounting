@@ -38,10 +38,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "config",
+    "market_data",
     "householdentities",
     "transactions",
     "importing",
+    "config",
     "charts",
 ]
 
@@ -182,6 +183,12 @@ LOGGING = {
         },
         # TODO @imranariffin: Fix log not showing (0015)
         "importing": {
+            "handlers": ["console"],
+            "formatter": "django.server",
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "charts": {
             "handlers": ["console"],
             "formatter": "django.server",
             "level": "DEBUG",

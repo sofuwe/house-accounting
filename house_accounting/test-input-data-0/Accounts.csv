@@ -1,4 +1,4 @@
 AccountID,Name,Institution,AmountInitial,DateStart
-KOHO_ABC,Koho Prepaid Credit Card,KOHO,0.00,2020-01-05
-TD-12345,TD Chequing Account,TDCanada,1000.00,2020-01-05
+KOHO_ABC,Koho Prepaid Credit Card,KOHO,0.00,2020-01-01
+TD-12345,TD Chequing Account,TDCanada,1000.00,2020-01-01
 TD-789,TD Savings Account,TDCanada,5000.00,2020-03-20

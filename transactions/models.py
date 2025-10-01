@@ -20,5 +20,16 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # 
+    # BEGIN MarketData attributes:
+
+    vendor = models.ForeignKey(
+        "market_data.Vendor",
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    # END MarketData attributes
+
     def __str__(self):
         return f"{self.__class__.__name__} ({self.transaction_id}: {self.amount})"

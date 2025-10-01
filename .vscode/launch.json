@@ -110,6 +110,21 @@
             ],
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+        {
+            "name": "Track accounts fr 2021-08-03 to 2025-09-01",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "track",
+                "--date-fr",
+                "2021-08-03",
+                "--date-to",
+                "2025-09-01"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

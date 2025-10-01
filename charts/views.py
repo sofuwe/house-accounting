@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.views.generic import TemplateView
 
-from charts.services import ChartService
+from charts.services import ChartsReadService
 from config.services import ConfigReadService
 from householdentities.services import EntityService
 from transactions.services import TransactionReadService
@@ -38,7 +38,7 @@ class CurrentBalancesChartView(TemplateView):
 
         trx_service = TransactionReadService()
         entity_service = EntityService()
-        chart_service = ChartService(
+        chart_service = ChartsReadService(
             transaction_service=trx_service,
             entity_service=entity_service,
         )

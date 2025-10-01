@@ -17,9 +17,11 @@ class ITransactionInput(Protocol):
 
 @dataclass
 class TransactionForAccount:
+    account_id: int
     transaction_id: str
     amount: decimal.Decimal
     date: dt.date
+    vendor_id: int
 
 
 class TransactionWriteService:
@@ -77,13 +79,39 @@ class TransactionWriteService:
 
 
 class TransactionReadService:
-    def get_transactions_for_accounts(self, accounts: list[int]) -> Iterator[TransactionForAccount]:
-        for trx in Transaction.objects.filter(account_id__in=accounts):
+    def get_transactions_for_accounts(
+            self, 
+            accounts: list[int],
+            date_fr: dt.date,
+            date_to: dt.date,
+    ) -> Iterator[TransactionForAccount]:
+        trx_qs = (
+            Transaction.objects
+            .filter(account_id__in=accounts, date__range=(date_fr, date_to))
+            .values_list("account_id", "transaction_id", "amount", "date", "vendor_id")
+        )
+        for account_id, trx_id, trx_amount, trx_date, vendor_id in trx_qs.iterator(1000):
             yield TransactionForAccount(
-                transaction_id=trx.transaction_id,
-                amount=trx.amount,
-                date=trx.date,
+                account_id=account_id,
+                transaction_id=trx_id,
+                amount=trx_amount,
+                date=trx_date,
+                vendor_id=vendor_id,
             )
+
+    def get_transaction_to_vendor_id_map(
+            self,
+            accounts: list[int],
+            date_fr: dt.date,
+            date_to: dt.date,
+    ) -> dict[int, int]:
+        qs = (
+            Transaction.objects
+            .filter(account_id__in=accounts, date__range=(date_fr, date_to))
+            .filter(vendor_id__isnull=False)
+            .values_list("transaction_id", "vendor_id")
+        )
+        return {trx_id: trx_vendor_id for trx_id, trx_vendor_id in qs}
 
     def get_earliest_latest_date(self) -> tuple[dt.date, dt.date] | tuple[None, None]:
         qs = Transaction.objects.values_list("date", flat=True)
