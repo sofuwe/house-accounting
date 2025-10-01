@@ -110,6 +110,17 @@
             ],
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+        {
+            "name": "Map Transactions To Vendors",
+            "type": "python",
+            "request": "launch",
+            "program": "./manage.py",
+            "args": [
+                "map_transactions_to_vendors"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

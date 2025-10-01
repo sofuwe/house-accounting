@@ -10,10 +10,11 @@ class TransactionAdmin(admin.ModelAdmin):
         "transaction_id_raw",
         "account__natural_id",
         "account__name",
+        "vendor__name",
         "amount",
         "date",
         "day",
     )
     list_display_links = ("transaction_id", "account__natural_id")
     search_fields = ("transaction_id", "date")
-    list_filter = ("account__natural_id", "account__name", "transaction_id_raw")
+    list_filter = ("account__natural_id", "account__name", "vendor__name")

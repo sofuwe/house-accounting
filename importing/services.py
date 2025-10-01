@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Iterator
 from venv import logger
 
+from importing.models import VendorTransactionIdMap
 from importing.parsers import (
     AccountCSVFileRowStandard,
     AccountFileParserStandard,
@@ -81,3 +82,12 @@ class ParserService:
             f"[fields: {[field for field in row.__class__.model_fields.values() if not (field.alias or field.serialization_alias)]}]"
         )
         return aliases
+
+
+class MappingService:
+
+    def get_trx_to_vendor_map(self) -> dict[str, str]:
+        return dict(
+            VendorTransactionIdMap.objects.all()
+            .values_list("transaction_id_raw", "vendor_id"),
+        )

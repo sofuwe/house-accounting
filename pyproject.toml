@@ -6,8 +6,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "django>=4.2.23",
+    "django-admin-export-action>=0.3.3",
     "pydantic>=2.11.7",
     "pypdfium2>=4.30.0",
+    "six>=1.17.0",
     "smart-open>=7.3.0.post1",
 ]
 

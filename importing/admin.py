@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+from admin_export_action.admin import export_selected_objects
+
 from .models import VendorTransactionIdMap
 
 
@@ -10,3 +12,5 @@ class VendorTransactionIdMapAdmin(admin.ModelAdmin):
         "vendor_id",
     )
     list_filter = ("vendor_id",)
+
+    actions = [export_selected_objects]

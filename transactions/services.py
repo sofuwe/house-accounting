@@ -79,6 +79,27 @@ class TransactionWriteService:
 
         return n_created, n_updated
 
+    def map_transactions_to_vendors(
+        self,
+        trx_to_vendor_map: dict[str, str],
+        vendor_id_map: dict[str, int],
+    ) -> int:
+        
+        trx_to_update: list[Transaction] = []
+
+        for trx in Transaction.objects.all().only("id"):
+            trx_id_raw: str = trx.transaction_id_raw
+            
+            if trx_id_raw not in trx_to_vendor_map:
+                continue
+
+            vendor_id = trx_to_vendor_map[trx_id_raw]
+            trx.vendor_id = vendor_id_map[vendor_id]
+
+            trx_to_update.append(trx)
+        
+        return Transaction.objects.bulk_update(trx_to_update, fields=["vendor_id"])
+
 
 class TransactionReadService:
     def get_transactions_for_accounts(self, accounts: list[int]) -> Iterator[TransactionForAccount]:
