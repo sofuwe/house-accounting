@@ -11,6 +11,7 @@ from utils import it
 class ITransactionInput(Protocol):
     account_id: str
     transaction_id: str
+    transaction_id_raw: str
     amount: decimal.Decimal
     date: dt.date
 
@@ -55,6 +56,7 @@ class TransactionWriteService:
                     trx_existing.amount = trx.amount
                     trx_existing.date = trx.date
                     trx_existing.account_id = account_id_map[trx.account_id]
+                    trx_existing.transaction_id_raw = trx.transaction_id_raw
                     transactions_update.append(trx_existing)
 
                 else:
@@ -62,6 +64,7 @@ class TransactionWriteService:
                     transactions_create.append(
                         Transaction(
                             transaction_id=trx.transaction_id,
+                            transaction_id_raw=trx.transaction_id_raw,
                             amount=trx.amount,
                             date=trx.date,
                             account_id=account_id_map[trx.account_id],
@@ -70,7 +73,8 @@ class TransactionWriteService:
 
             n_created += len(Transaction.objects.bulk_create(transactions_create))
             n_updated += Transaction.objects.bulk_update(
-                transactions_update, fields=["amount", "date", "account_id"]
+                transactions_update,
+                fields=["amount", "date", "account_id", "transaction_id_raw"],
             )
 
         return n_created, n_updated
