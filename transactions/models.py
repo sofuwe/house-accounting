@@ -19,6 +19,15 @@ class Transaction(models.Model):
     date = models.DateField(null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    vendor = models.ForeignKey(
+        "market_data.Vendor",
+        on_delete=models.CASCADE,
+        null=True,
+    )
 
     def __str__(self):
         return f"{self.__class__.__name__} ({self.transaction_id}: {self.amount})"
+
+    @property
+    def day(self) -> str:
+        return self.date.strftime("%A")
