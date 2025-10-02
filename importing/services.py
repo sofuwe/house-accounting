@@ -10,7 +10,6 @@ from importing.parsers import (
     AccountFileParserStandard,
     TransactionCSVFileParserKOHO,
     TransactionCSVFileParserTDCanada,
-    TransactionFilesParserStandard,
     TransactionCSVRowStandard,
 )
 
@@ -84,10 +83,8 @@ class ParserService:
         return aliases
 
 
-class MappingService:
-
+class MappingReadService:
     def get_trx_to_vendor_map(self) -> dict[str, str]:
         return dict(
-            VendorTransactionIdMap.objects.all()
-            .values_list("transaction_id_raw", "vendor_id"),
+            VendorTransactionIdMap.objects.all().values_list("transaction_id_raw", "vendor_id"),
         )

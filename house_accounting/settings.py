@@ -39,10 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # Third-part apps:
     "admin_export_action",
-
     # Local apps:
     "config",
     "market_data",
@@ -182,13 +180,13 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "imported": {
+        "importing": {
             "handlers": ["console"],
+            "formatter": "django.server",
             "level": "DEBUG",
             "propagate": True,
         },
-        # TODO @imranariffin: Fix log not showing (0015)
-        "importing": {
+        "transactions": {
             "handlers": ["console"],
             "formatter": "django.server",
             "level": "DEBUG",
@@ -200,5 +198,5 @@ LOGGING = {
 # django-admin-export-action
 
 ADMIN_EXPORT_ACTION = {
-    "ENABLE_SITEWIDE": False,   
+    "ENABLE_SITEWIDE": False,
 }

@@ -1,11 +1,16 @@
 import datetime as dt
 import decimal
+import logging
 from dataclasses import dataclass
 from typing import Iterator, Protocol
 
 from householdentities.services import EntityService
+from importing.services import MappingReadService
+from market_data.services import MarketDataReadService, MarketDataWriteService
 from transactions.models import Transaction
 from utils import it
+
+logger = logging.getLogger(__name__)
 
 
 class ITransactionInput(Protocol):
@@ -84,12 +89,11 @@ class TransactionWriteService:
         trx_to_vendor_map: dict[str, str],
         vendor_id_map: dict[str, int],
     ) -> int:
-        
         trx_to_update: list[Transaction] = []
 
         for trx in Transaction.objects.all().only("id"):
             trx_id_raw: str = trx.transaction_id_raw
-            
+
             if trx_id_raw not in trx_to_vendor_map:
                 continue
 
@@ -97,7 +101,7 @@ class TransactionWriteService:
             trx.vendor_id = vendor_id_map[vendor_id]
 
             trx_to_update.append(trx)
-        
+
         return Transaction.objects.bulk_update(trx_to_update, fields=["vendor_id"])
 
 
@@ -115,3 +119,37 @@ class TransactionReadService:
         earliest = qs.order_by("date").first()
         latest = qs.order_by("-date").first()
         return (earliest, latest)
+
+
+class TransactionMappingService:
+    def __init__(
+        self,
+        mapping_rd_svc: MappingReadService,
+        market_data_rd_svc: MarketDataReadService,
+        market_data_wr_svc: MarketDataWriteService,
+        trx_wr_svc: TransactionWriteService,
+    ):
+        self._mapping_rd_svc = mapping_rd_svc
+        self._market_data_rd_svc = market_data_rd_svc
+        self._market_data_wr_svc = market_data_wr_svc
+        self._trx_wr_svc = trx_wr_svc
+
+    def map_transactions_to_vendors(self):
+        trx_to_vendor_map = self._mapping_rd_svc.get_trx_to_vendor_map()
+
+        vendors_to_create: list[tuple[str, str]] = []
+        vendor_id_map = self._market_data_rd_svc.get_vendor_id_map()
+        for vendor_id in trx_to_vendor_map.values():
+            if vendor_id not in vendor_id_map:
+                vendors_to_create.append((vendor_id, vendor_id))
+
+        vendors_created, _ = self._market_data_wr_svc.bulk_create_or_update_vendors(
+            vendors_to_create,
+        )
+        logger.debug("Created %s new vendors", vendors_created)
+
+        count: int = self._trx_wr_svc.map_transactions_to_vendors(
+            trx_to_vendor_map=trx_to_vendor_map,
+            vendor_id_map=self._market_data_rd_svc.get_vendor_id_map(),
+        )
+        logger.debug("Mapped %s transactions to vendors", count)
