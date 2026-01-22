@@ -21,3 +21,7 @@ You will see something like this (For now. Please excuse the bad, empty UI):
 ## Architecture
 
 See [Architecture Page](docs/ARCHITECTURE.md)
+
+## Merchant Mapping
+
+Each transaction will be mapped to a merchant, for now via this project: [ha-merchant-classifier](https://github.com/sofuwe/ha-merchant-classifier)
